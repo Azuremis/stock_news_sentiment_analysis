@@ -16,4 +16,22 @@ for ticker in tickers:
     # extract table which holds news titles
     news_tables[ticker] = html.find(id="news-table")
 
-    print(news_tables)
+# extract article info from table rows
+parsed_data = []
+for ticker, news_table in news_tables.items():
+    for row in news_table.findAll("tr"):
+        # specify elements
+        title = row.a.text
+        date_data = row.td.text.split()
+
+        # if only time is given
+        if len(date_data) == 1:
+            time = date_data[0]
+        # if both time and date are given
+        else:
+            date = date_data[0]
+            time = date_data[1]
+
+        parsed_data.append([ticker, date, time, title])
+
+print(parsed_data)
