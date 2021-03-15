@@ -1,5 +1,8 @@
 from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import pandas as pd
+import matplotlib.pyplot as plt
 
 finviz_url = "https://finviz.com/quote.ashx?t="
 tickers = ["GME", "TSLA", "NVDA", "ATVI", "MTCH"]
@@ -34,4 +37,18 @@ for ticker, news_table in news_tables.items():
 
         parsed_data.append([ticker, date, time, title])
 
-print(parsed_data)
+# apply sentiment analysis to headlines using nltk vader package
+df = pd.DataFrame(parsed_data, columns=["ticker", "date", "time", "title"])
+vader = SentimentIntensityAnalyzer()
+df["Sentiment"] = df.title.map(lambda t: vader.polarity_scores(t)["compound"])
+
+# process data for easy visualisation
+df["date"] = pd.to_datetime(df.date).dt.date
+mean_df = df.groupby(["ticker", "date"]).mean()
+mean_df = mean_df.unstack()  # have date as the first column
+mean_df = mean_df.xs("Sentiment", axis="columns").transpose()  # remove Sentiment as column title
+
+# visualise sentiment across dates
+plt.figure(figsize=(20, 16))
+mean_df.plot(kind="bar")
+plt.show()
